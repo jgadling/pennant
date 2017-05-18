@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.quadra.pennant.flagcheck";
+option java_outer_classname = "PennantProto";
+
+package proto;
+
+// The flag value service definition.
+service Pennant {
+  // Gets a value for a flag
+  rpc GetFlagValue (FlagRequest) returns (FlagReply) {}
+}
+
+// The request message containing the name of the flag
+// and whether it's enabled.
+message FlagRequest {
+  string Name = 1;
+  map<string, string> Strings = 2;
+  map<string, double> Numbers = 3;
+}
+
+// The response message containing the flat value
+message FlagReply {
+  int32 Status = 1;
+  bool Enabled = 2;
+}
+

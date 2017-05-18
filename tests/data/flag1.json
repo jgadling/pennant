@@ -1,0 +1,19 @@
+{
+  "name": "red_button",
+  "description": "Makes the button on the home page red",
+  "default": false,
+  "policies": [
+     {
+      "comment": "Everybody whose username starts with 'foo'",
+      "rules": "user_username =~ '^foo'"
+     },
+     {
+      "comment": "and some volunteers",
+      "rules": "user_id in (10, 11, 13)"
+     },
+     {
+      "comment": "Also 10% of rando users",
+      "rules": "pct(user_username) <= 10"
+     }
+  ]
+}

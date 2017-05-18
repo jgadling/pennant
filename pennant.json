@@ -1,0 +1,18 @@
+{
+  "storage_driver": "consul",
+  "http_port": 1234,
+  "grpc_port": 5432,
+  "consul": {
+    "protocol": "https",
+    "host": "127.0.0.1:8500",
+    "auth_token": "asdf123",
+    "prefix": "apps/pennant",
+    "poll_timeout": 30
+  },
+  "statsd": {
+    "host": "1.2.3.4",
+    "port": 8125,
+    "protocol": "udp",
+    "prefix": "pennant.counters"
+  }
+}
