@@ -20,7 +20,7 @@ func runHttp(conf *Config, fc *FlagCache, driver StorageDriver) {
 
 	graceful.AddSignal(syscall.SIGTERM)
 	server := graceful.Server{
-		Addr:    fmt.Sprintf(":%d", conf.HttpPort),
+		Addr:    fmt.Sprintf(":%d", conf.HTTPPort),
 		Handler: handler,
 	}
 	err := server.ListenAndServe()

@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+
 	"github.com/Knetic/govaluate"
 )
 
@@ -24,7 +24,7 @@ type Policy struct {
 func LoadFlagJson(flagData []byte) (*Flag, error) {
 	flag := Flag{}
 	if err := json.Unmarshal(flagData, &flag); err != nil {
-		return &flag, errors.New(fmt.Sprintf("can't parse flag %s", flagData))
+		return &flag, fmt.Errorf("can't parse flag %s", flagData)
 	}
 	return &flag, nil
 }
@@ -32,7 +32,7 @@ func LoadFlagJson(flagData []byte) (*Flag, error) {
 func LoadAndParseFlag(flagData []byte) (*Flag, error) {
 	flag := Flag{}
 	if err := json.Unmarshal(flagData, &flag); err != nil {
-		return &flag, errors.New(fmt.Sprintf("can't parse flag %s", flagData))
+		return &flag, fmt.Errorf("can't parse flag %s", flagData)
 	}
 	err := flag.Parse()
 	return &flag, err

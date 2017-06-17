@@ -134,12 +134,12 @@ func (driver *ConsulDriver) saveFlag(f *Flag) error {
 	client := driver.client.KV()
 	prefix := driver.conf.Prefix
 	flagKey := fmt.Sprintf("%s/%s", prefix, f.Name)
-	flagJson, _ := json.Marshal(f)
+	flagJSON, _ := json.Marshal(f)
 	logger.Criticalf("Key is %s", flagKey)
-	logger.Criticalf("Value is %s", flagJson)
+	logger.Criticalf("Value is %s", flagJSON)
 	flagVal := &consulapi.KVPair{
 		Key:   flagKey,
-		Value: flagJson}
+		Value: flagJSON}
 
 	_, err := client.Put(flagVal, nil)
 	return err

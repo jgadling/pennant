@@ -2,16 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/urfave/cli"
 	"io/ioutil"
 	"os"
+
+	"github.com/urfave/cli"
 )
 
 func main() {
-	pennant_cli()
+	pennantCli()
 }
 
-func pennant_cli() {
+func pennantCli() {
 	app := cli.NewApp()
 
 	app.Name = "pennant"

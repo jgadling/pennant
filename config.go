@@ -10,17 +10,17 @@ import (
 type Config struct {
 	StorageDriver string       `json:"storage_driver"`
 	StatsD        StatsDConfig `json:"statsd_server"`
-	HttpPort      int          `json:"http_port"`
+	HTTPPort      int          `json:"http_port"`
 	GrpcAddr      string       `json:"grpc_addr"`
 	GrpcPort      int          `json:"grpc_port"`
 	Consul        ConsulConfig `json:"consul"`
 }
 
-func loadConfig(conf_file string) (*Config, error) {
+func loadConfig(cfg string) (*Config, error) {
 	conf := Config{}
-	_, err := os.Stat(conf_file)
+	_, err := os.Stat(cfg)
 	logger.Debug("loading config")
-	file, err := ioutil.ReadFile(conf_file)
+	file, err := ioutil.ReadFile(cfg)
 	if err != nil {
 		return &conf, err
 	}
