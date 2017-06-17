@@ -9,7 +9,7 @@ performance.
 % brew install consul
 % consul agent -dev -advertise 127.0.0.1
 % git clone pennant.git
-% go build && ./pennant server
+% go get -u && go build && ./pennant server
 ```
 
 ### API
