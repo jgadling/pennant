@@ -5,11 +5,29 @@ performance.
 
 ### Getting Started
 
+You'll need [govendor](https://github.com/kardianos/govendor) to manage dependencies. To install:
+
+```
+% go get -u github.com/kardianos/govendor
+```
+
+Using govendor:
+
+```
+# fetch dependencies and copy them into the vendor/ directory
+% govendor get
+# update packages from existing contents of your $GOPATH
+% govendor update
+```
+
+Building and running pennant:
+
 ```
 % brew install consul
 % consul agent -dev -advertise 127.0.0.1
 % git clone pennant.git
-% go get -u && go build && ./pennant server
+# note govendor wrapping the "build" command
+% govendor build && ./pennant server
 ```
 
 ### API
