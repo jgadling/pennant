@@ -32,7 +32,9 @@ func runHttp(conf *Config, fc *FlagCache, driver StorageDriver) {
 
 func pennantRouter(conf *Config, fc *FlagCache, driver StorageDriver) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
+	// Supporting a posted request body via POST and query string params via GET?
 	router.Methods("GET").Path("/flagValue/{name}").Handler(FlagValueHandler(fc))
+	router.Methods("POST").Path("/flagValue/{name}").Handler(FlagValueHandler(fc))
 	router.Methods("GET").Path("/flags").Handler(ListFlags(fc))
 	router.Methods("POST").Path("/flags").Handler(SaveFlag(driver))
 	router.Methods("DELETE").Path("/flags/{name}").Handler(DeleteFlag(fc, driver))
@@ -42,18 +44,20 @@ func pennantRouter(conf *Config, fc *FlagCache, driver StorageDriver) *mux.Route
 
 type FlagValueResponse struct {
 	Status  int    `json:"status"`
-	Enabled bool   `json:"enabled"`
 	Message string `json:"message"`
+	Enabled bool   `json:"enabled"`
 }
 
 type FlagListResponse struct {
-	Status int      `json:"status"`
-	Flags  []string `json:"flags"`
+	Status  int      `json:"status"`
+	Message string   `json:"message"`
+	Flags   []string `json:"flags"`
 }
 
 type FlagItemResponse struct {
-	Status int   `json:"status"`
-	Flag   *Flag `json:"flag"`
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+	Flag    *Flag  `json:"flag"`
 }
 
 func send(w http.ResponseWriter, status int, resp interface{}) {
@@ -69,33 +73,37 @@ func SaveFlag(driver StorageDriver) http.Handler {
 
 		flag, err := LoadAndParseFlag(body)
 		if err != nil {
-			send(w, 400, FlagValueResponse{
+			send(w, 400, FlagItemResponse{
 				Status:  400,
 				Message: fmt.Sprintf("Error: %v", err),
+				Flag:    flag,
 			})
 			return
 		}
 		re := regexp.MustCompile("^[0-9a-z_-]+$")
 		logger.Infof("re is %v", re)
 		if len(flag.Name) < 3 || len(flag.Name) > 120 || !re.MatchString(flag.Name) {
-			send(w, 400, FlagValueResponse{
+			send(w, 400, FlagItemResponse{
 				Status:  400,
 				Message: "Error: flag name must be 3-120 chars, letters, numbers, underscores and dashes are allowed",
+				Flag:    flag,
 			})
 			return
 		}
 
 		driverErr := driver.saveFlag(flag)
 		if driverErr != nil {
-			send(w, 500, FlagValueResponse{
+			send(w, 500, FlagItemResponse{
 				Status:  500,
 				Message: fmt.Sprintf("Error: could not write flag %v", err),
+				Flag:    flag,
 			})
 			return
 		}
-		send(w, 200, FlagValueResponse{
+		send(w, 200, FlagItemResponse{
 			Status:  200,
-			Enabled: true,
+			Message: "OK",
+			Flag:    flag,
 		})
 		return
 	})
@@ -108,8 +116,9 @@ func ListFlags(fc *FlagCache) http.Handler {
 			flagList = append(flagList, flag.Name)
 		}
 		response := FlagListResponse{
-			Status: 200,
-			Flags:  flagList,
+			Status:  200,
+			Message: "OK",
+			Flags:   flagList,
 		}
 		send(w, response.Status, response)
 	})
@@ -122,15 +131,17 @@ func GetFlag(fc *FlagCache) http.Handler {
 		flag, err := fc.Get(flagName)
 		if err != nil {
 			// The flag didn't exist in the cache, let's send a 404
-			send(w, 404, FlagValueResponse{
+			send(w, 404, FlagItemResponse{
 				Status:  404,
-				Enabled: false,
+				Message: "flag not found",
+				Flag:    flag,
 			})
 			return
 		}
 		response := FlagItemResponse{
-			Status: 200,
-			Flag:   flag,
+			Status:  200,
+			Message: "OK",
+			Flag:    flag,
 		}
 		send(w, response.Status, response)
 	})
@@ -145,6 +156,7 @@ func DeleteFlag(fc *FlagCache, driver StorageDriver) http.Handler {
 			// The flag didn't exist in the cache, let's send a 404
 			send(w, 404, FlagValueResponse{
 				Status:  404,
+				Message: "Not Found",
 				Enabled: false,
 			})
 			return
@@ -161,6 +173,7 @@ func DeleteFlag(fc *FlagCache, driver StorageDriver) http.Handler {
 
 		send(w, 200, FlagValueResponse{
 			Status:  200,
+			Message: "OK",
 			Enabled: true,
 		})
 	})
@@ -175,6 +188,7 @@ func FlagValueHandler(fc *FlagCache) http.Handler {
 			// The flag didn't exist in the cache, let's send a 404
 			send(w, 404, FlagValueResponse{
 				Status:  404,
+				Message: "Flag not found",
 				Enabled: false,
 			})
 			return
@@ -182,12 +196,25 @@ func FlagValueHandler(fc *FlagCache) http.Handler {
 		body, _ := ioutil.ReadAll(r.Body)
 		r.Body.Close()
 
+		// Support request body for POST
 		datas := make(map[string]interface{})
 		json.Unmarshal(body, &datas)
+
+		// Support Query string data for GET
+		queryData := r.URL.Query()
+		for k, v := range queryData {
+			if len(v) == 1 {
+				datas[k] = v[0]
+				continue
+			}
+			datas[k] = v
+		}
+
 		logger.Warningf("datas is %v", datas)
 		enabled := flag.GetValue(datas)
 		send(w, 200, FlagValueResponse{
 			Status:  200,
+			Message: "OK",
 			Enabled: enabled,
 		})
 	})

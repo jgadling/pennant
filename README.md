@@ -67,14 +67,77 @@ Building and running pennant:
 
 ### CLI
 
-TODO
 
-To test whether a feature flag will be enabled given a flag definition and a
-document:
+#### Create or update a flag
+
+```
+$ pennant update -f tests/data/flag1.json
+- or -
+$ pennant update '{"name":"red_button","description":....}'
+- or -
+$ cat tests/data/flag1.json | pennant update -
+
+Name        Description                            DefaultValue
+----------  -------------------------------------  ------------
+red_button  Makes the button on the home page red  false
+
+Rule                      Comment
+------------------------  ------------------------------------------
+user_username =~ '^foo'   Everybody whose username starts with 'foo'
+user_id in (10, 11, 13)   and some volunteers
+pct(user_username) <= 10  Also 10% of rando users
+```
+
+#### List flags
+
+```
+% pennant list
+Name
+----------
+red_button
+```
+
+#### Get flag details
+
+```
+$ pennant show red_button
+Name        Description                            DefaultValue
+----------  -------------------------------------  ------------
+red_button  Makes the button on the home page red  false
+
+Rule                      Comment
+------------------------  ------------------------------------------
+user_username =~ '^foo'   Everybody whose username starts with 'foo'
+user_id in (10, 11, 13)   and some volunteers
+pct(user_username) <= 10  Also 10% of rando users
+```
+
+#### Check whether a flag is enabled
+
+```
+$ pennant value red_button '{"user_id": 10}'
+- or -
+$ pennant value red_button -f document.json
+- or -
+$ cat document.json | pennant value red_button -
+Flag        Status
+----------  -------
+red_button  enabled
+```
+
+#### Delete a flag
+
+```
+$ pennant delete red_button
+red_button deleted
+```
+
+#### Test a flag without a server
 
 ```
 pennant test -f tests/data/flag1.json -d tests/data/data1.json
 ```
+
 
 ### Roadmap
 V1 milestones:
@@ -85,11 +148,13 @@ V1 milestones:
  - ✓ Immediately updates flag cache when consul values change
  - ✓ Bundled percentage calculator
  - ✓ Supports arbitrary expressions for en/disabling flags
- - Client and server in single binary
+ - ✓ Client and server in single binary
+ - Tests
  - Ships metrics to StatsD
 
 V2:
 
+ - More drivers - sqlite, etcd, filesystem?
  - Authentication
  - Prometheus compatible stats
  - Query results caching, more perf improvements

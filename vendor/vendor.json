@@ -9,6 +9,12 @@
 			"revisionTime": "2017-05-26T16:29:15Z"
 		},
 		{
+			"checksumSHA1": "/Uu9VEStxBNP071IMqe/VX8SJzg=",
+			"path": "github.com/franela/goreq",
+			"revision": "b5b0f5eb2d16f20345cce0a544a75163579c0b00",
+			"revisionTime": "2017-04-18T06:49:16Z"
+		},
+		{
 			"checksumSHA1": "qlPUeFabwF4RKAOF1H+yBFU1Veg=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "e325f446bebc2998605911c0a2650d9920361d4a",
