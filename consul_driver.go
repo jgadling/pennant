@@ -8,14 +8,15 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 )
 
+// Storage driver interface
 type StorageDriver interface {
 	watchForChanges(*FlagCache, uint64)
 	loadAllFlags(*FlagCache) (uint64, error)
-	createFlag(*Flag) error
 	saveFlag(*Flag) error
 	deleteFlag(string) error
 }
 
+// Consul configuration definition, used by config module.
 type ConsulConfig struct {
 	Protocol    string `json:"protocol"`
 	Host        string `json:"host"`
@@ -25,11 +26,13 @@ type ConsulConfig struct {
 	PollTimeout int    `json:"poll_timeout"`
 }
 
+// Container for consul driver config
 type ConsulDriver struct {
 	conf   *ConsulConfig
 	client *consulapi.Client
 }
 
+// Return a StorageDriver interface'd object.
 func NewConsulDriver(conf *ConsulConfig) (*ConsulDriver, error) {
 	driver := &ConsulDriver{
 		conf:   conf,
@@ -43,6 +46,7 @@ func NewConsulDriver(conf *ConsulConfig) (*ConsulDriver, error) {
 	return driver, nil
 }
 
+// Connect to consul
 func getConsulConnection(conf *ConsulConfig) (*consulapi.Client, error) {
 	config := consulapi.DefaultConfig()
 	config.Address = conf.Host
@@ -53,9 +57,10 @@ func getConsulConnection(conf *ConsulConfig) (*consulapi.Client, error) {
 	return consul, nil
 }
 
+// Main consul-watch loop so we can update our cache when keys change.
 func (driver *ConsulDriver) watchForChanges(fc *FlagCache, version uint64) {
 	for true {
-		data, newVersion, err := driver.GetPolicies(version)
+		data, newVersion, err := driver.GetFlags(version)
 		if err != nil {
 			// Give consul a few seconds to get its act together
 			logger.Warning("Got an error from consul: %v", err)
@@ -66,9 +71,9 @@ func (driver *ConsulDriver) watchForChanges(fc *FlagCache, version uint64) {
 	}
 }
 
+// On start, read all policies and add them to our flag cache.
 func (driver *ConsulDriver) loadAllFlags(fc *FlagCache) (uint64, error) {
-	// On start, read all policies and add them to our flag cache.
-	data, version, err := driver.GetPolicies(0)
+	data, version, err := driver.GetFlags(0)
 	if err != nil {
 		return uint64(0), err
 	}
@@ -76,7 +81,8 @@ func (driver *ConsulDriver) loadAllFlags(fc *FlagCache) (uint64, error) {
 	return version, nil
 }
 
-func (driver *ConsulDriver) GetPolicies(version uint64) (consulapi.KVPairs, uint64, error) {
+// Read all flags from Consul
+func (driver *ConsulDriver) GetFlags(version uint64) (consulapi.KVPairs, uint64, error) {
 	newVersion := uint64(0)
 	client := driver.client.KV()
 	prefix := driver.conf.Prefix
@@ -91,11 +97,10 @@ func (driver *ConsulDriver) GetPolicies(version uint64) (consulapi.KVPairs, uint
 	return data, newVersion, nil
 }
 
+// Given a list of flag definitions from consul, update our cache as necessary
 func (driver *ConsulDriver) updateCache(fc *FlagCache, data consulapi.KVPairs) error {
-	// Update all flags from consul.
 	foundFlags := make(map[string]bool)
 	for _, flagItem := range data {
-		logger.Warningf("Flag modifyIndex is %v", flagItem.ModifyIndex)
 		flag, err := LoadFlagJson(flagItem.Value)
 		foundFlags[flag.Name] = true
 		if err != nil {
@@ -105,7 +110,7 @@ func (driver *ConsulDriver) updateCache(fc *FlagCache, data consulapi.KVPairs) e
 		}
 		oldFlag, err := fc.Get(flag.Name)
 		if err == nil && oldFlag.Version == flagItem.ModifyIndex {
-			logger.Warningf("Flag %s not changed, skipping update", flag.Name)
+			logger.Debugf("Flag %s not changed, skipping update", flag.Name)
 			continue
 
 		}
@@ -117,12 +122,11 @@ func (driver *ConsulDriver) updateCache(fc *FlagCache, data consulapi.KVPairs) e
 		}
 	}
 	// Remove any flags that were in the cache and no longer in consul
-	logger.Warningf("Found Flags %s", foundFlags)
 	cachedFlags := fc.List()
 	for idx, _ := range cachedFlags {
 		_, ok := foundFlags[idx]
 		if !ok {
-			logger.Warningf("Deleting cache key %s", idx)
+			logger.Debugf("Deleting cache key %s", idx)
 			fc.Delete(idx)
 		}
 	}
@@ -130,13 +134,12 @@ func (driver *ConsulDriver) updateCache(fc *FlagCache, data consulapi.KVPairs) e
 	return nil
 }
 
+// Write a new flag to consul
 func (driver *ConsulDriver) saveFlag(f *Flag) error {
 	client := driver.client.KV()
 	prefix := driver.conf.Prefix
 	flagKey := fmt.Sprintf("%s/%s", prefix, f.Name)
 	flagJSON, _ := json.Marshal(f)
-	logger.Criticalf("Key is %s", flagKey)
-	logger.Criticalf("Value is %s", flagJSON)
 	flagVal := &consulapi.KVPair{
 		Key:   flagKey,
 		Value: flagJSON}
@@ -145,14 +148,11 @@ func (driver *ConsulDriver) saveFlag(f *Flag) error {
 	return err
 }
 
+// Delete a flag from consul
 func (driver *ConsulDriver) deleteFlag(flagName string) error {
 	client := driver.client.KV()
 	prefix := driver.conf.Prefix
 	flagKey := fmt.Sprintf("%s/%s", prefix, flagName)
 	_, err := client.Delete(flagKey, nil)
 	return err
-}
-
-func (driver *ConsulDriver) createFlag(f *Flag) error {
-	return nil
 }

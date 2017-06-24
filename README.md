@@ -1,4 +1,4 @@
-## Name TBD
+## Pennant Feature Flags
 
 Pennant is a powerful dark-launch utility designed for maximum flexibility and
 performance.

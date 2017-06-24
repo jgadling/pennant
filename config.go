@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// Config represents the application configuration.
 type Config struct {
 	StorageDriver string       `json:"storage_driver"`
 	StatsD        StatsDConfig `json:"statsd_server"`
@@ -16,10 +17,10 @@ type Config struct {
 	Consul        ConsulConfig `json:"consul"`
 }
 
+// Entrypoint to loading server configuration.
 func loadConfig(cfg string) (*Config, error) {
 	conf := Config{}
 	_, err := os.Stat(cfg)
-	logger.Debug("loading config")
 	file, err := ioutil.ReadFile(cfg)
 	if err != nil {
 		return &conf, err
@@ -30,6 +31,7 @@ func loadConfig(cfg string) (*Config, error) {
 	return &conf, nil
 }
 
+// Load the flag storage driver.
 func (conf *Config) getDriver() (StorageDriver, error) {
 	switch conf.StorageDriver {
 	case "consul":

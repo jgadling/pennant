@@ -19,9 +19,9 @@ type server struct {
 // GetFlagValue implements proto.PennantServer
 func (s *server) GetFlagValue(ctx context.Context, in *pb.FlagRequest) (*pb.FlagReply, error) {
 	flagCache := s.fc
-	logger.Warning("Flag requested: ", in.Name)
-	logger.Warning("Flag String Data: ", in.Strings)
-	logger.Warning("Flag Number Data: ", in.Numbers)
+	logger.Debugf("Flag requested: ", in.Name)
+	logger.Debugf("Flag String Data: ", in.Strings)
+	logger.Debugf("Flag Number Data: ", in.Numbers)
 	flag, err := flagCache.Get(in.Name)
 	if err != nil {
 		// The flag didn't exist in the cache, let's send a 404
@@ -38,6 +38,7 @@ func (s *server) GetFlagValue(ctx context.Context, in *pb.FlagRequest) (*pb.Flag
 	return &pb.FlagReply{Status: 200, Enabled: enabled}, nil
 }
 
+// Run the GRPC server
 func runGrpc(conf *Config, fc *FlagCache) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", conf.GrpcAddr, conf.GrpcPort))
 	if err != nil {

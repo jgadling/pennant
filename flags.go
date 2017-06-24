@@ -7,6 +7,7 @@ import (
 	"github.com/Knetic/govaluate"
 )
 
+// A feature flag is some metadata and a collection of policies
 type Flag struct {
 	Name         string   `json:"name"`
 	Description  string   `json:"description"`
@@ -15,12 +16,14 @@ type Flag struct {
 	Version      uint64   `json:"-"` // Yeah this abstraction is leaky :(
 }
 
+// A policy is a govaluate-compatible expression that returns true or false
 type Policy struct {
 	Comment    string                         `json:"comment"`
 	Rules      string                         `json:"rules"`
 	ParsedExpr *govaluate.EvaluableExpression `json:"-"`
 }
 
+// Load a flag but don't parse the policies yet
 func LoadFlagJson(flagData []byte) (*Flag, error) {
 	flag := Flag{}
 	if err := json.Unmarshal(flagData, &flag); err != nil {
@@ -29,6 +32,7 @@ func LoadFlagJson(flagData []byte) (*Flag, error) {
 	return &flag, nil
 }
 
+// Load a flag and parse the policy expressions
 func LoadAndParseFlag(flagData []byte) (*Flag, error) {
 	flag := Flag{}
 	if err := json.Unmarshal(flagData, &flag); err != nil {
@@ -38,27 +42,26 @@ func LoadAndParseFlag(flagData []byte) (*Flag, error) {
 	return &flag, err
 }
 
+// Parse and cache all the policy expressions for this flag. This needs to be
+// done before GetResult can be invoked.
 func (f *Flag) Parse() error {
-	logger.Infof("loading %v", f)
-	boringExpr, _ := govaluate.NewEvaluableExpressionWithFunctions("false", getLibraryFunctions())
+	fallbackExpr, _ := govaluate.NewEvaluableExpressionWithFunctions("false", getLibraryFunctions())
 	for i := range f.Policies {
 		policy := &f.Policies[i]
 
-		logger.Infof("loading %v", policy.Rules)
-
 		expr, err := govaluate.NewEvaluableExpressionWithFunctions(policy.Rules, getLibraryFunctions())
 		if err != nil {
-			policy.ParsedExpr = boringExpr
+			policy.ParsedExpr = fallbackExpr
 			return err
 		}
-		logger.Infof("parsed expr %v", expr)
 		policy.ParsedExpr = expr
 	}
 	return nil
 }
 
+// GetValue compares a document to the flag policies and returns the boolean
+// result of the evaluation.
 func (f *Flag) GetValue(params map[string]interface{}) bool {
-	logger.Infof("getting value %v", params)
 	returnval := f.DefaultValue
 	if returnval {
 		return returnval
@@ -67,7 +70,7 @@ func (f *Flag) GetValue(params map[string]interface{}) bool {
 	for i := range f.Policies {
 		go func(policy *Policy) {
 			if policy.ParsedExpr == nil {
-				logger.Errorf("Something is nullified")
+				logger.Errorf("null value exception")
 				messages <- false
 				return
 			}
@@ -77,7 +80,6 @@ func (f *Flag) GetValue(params map[string]interface{}) bool {
 				messages <- false
 				return
 			}
-			logger.Infof("result is %v", res)
 			if res == true {
 				messages <- true
 			}
@@ -87,6 +89,7 @@ func (f *Flag) GetValue(params map[string]interface{}) bool {
 	// Wait for responses.
 	for i := 0; i < len(f.Policies); i++ {
 		if <-messages {
+			// First true means we can stop waiting
 			return true
 		}
 	}

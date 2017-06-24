@@ -14,6 +14,7 @@ import (
 	"github.com/zenazn/goji/graceful"
 )
 
+// Run HTTP server
 func runHttp(conf *Config, fc *FlagCache, driver StorageDriver) {
 	router := pennantRouter(conf, fc, driver)
 	handler := handlers.LoggingHandler(os.Stdout, router)
@@ -30,11 +31,14 @@ func runHttp(conf *Config, fc *FlagCache, driver StorageDriver) {
 	graceful.Wait()
 }
 
+// Configure routes
 func pennantRouter(conf *Config, fc *FlagCache, driver StorageDriver) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	// Supporting a posted request body via POST and query string params via GET?
 	router.Methods("GET").Path("/flagValue/{name}").Handler(FlagValueHandler(fc))
 	router.Methods("POST").Path("/flagValue/{name}").Handler(FlagValueHandler(fc))
+
+	// CRUD's for flags
 	router.Methods("GET").Path("/flags").Handler(ListFlags(fc))
 	router.Methods("POST").Path("/flags").Handler(SaveFlag(driver))
 	router.Methods("DELETE").Path("/flags/{name}").Handler(DeleteFlag(fc, driver))
@@ -42,30 +46,35 @@ func pennantRouter(conf *Config, fc *FlagCache, driver StorageDriver) *mux.Route
 	return router
 }
 
+// Whether or not a flag is enabled
 type FlagValueResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 	Enabled bool   `json:"enabled"`
 }
 
-type FlagListResponse struct {
-	Status  int      `json:"status"`
-	Message string   `json:"message"`
-	Flags   []string `json:"flags"`
-}
-
+// Single flag
 type FlagItemResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 	Flag    *Flag  `json:"flag"`
 }
 
+// List of flags
+type FlagListResponse struct {
+	Status  int      `json:"status"`
+	Message string   `json:"message"`
+	Flags   []string `json:"flags"`
+}
+
+// Send a response back to the client
 func send(w http.ResponseWriter, status int, resp interface{}) {
 	w.WriteHeader(status)
 	b, _ := json.Marshal(resp)
 	w.Write([]byte(b))
 }
 
+// Update a flag
 func SaveFlag(driver StorageDriver) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := ioutil.ReadAll(r.Body)
@@ -81,7 +90,6 @@ func SaveFlag(driver StorageDriver) http.Handler {
 			return
 		}
 		re := regexp.MustCompile("^[0-9a-z_-]+$")
-		logger.Infof("re is %v", re)
 		if len(flag.Name) < 3 || len(flag.Name) > 120 || !re.MatchString(flag.Name) {
 			send(w, 400, FlagItemResponse{
 				Status:  400,
@@ -109,6 +117,7 @@ func SaveFlag(driver StorageDriver) http.Handler {
 	})
 }
 
+// Returns a list of all flags
 func ListFlags(fc *FlagCache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		flagList := make([]string, 0)
@@ -124,6 +133,7 @@ func ListFlags(fc *FlagCache) http.Handler {
 	})
 }
 
+// Get the definition of a single flag
 func GetFlag(fc *FlagCache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -147,6 +157,7 @@ func GetFlag(fc *FlagCache) http.Handler {
 	})
 }
 
+// Delete a flag
 func DeleteFlag(fc *FlagCache, driver StorageDriver) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -179,6 +190,8 @@ func DeleteFlag(fc *FlagCache, driver StorageDriver) http.Handler {
 	})
 }
 
+// Perform policy evaluations on a document to determine whether a flag is
+// enabled.
 func FlagValueHandler(fc *FlagCache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -210,7 +223,7 @@ func FlagValueHandler(fc *FlagCache) http.Handler {
 			datas[k] = v
 		}
 
-		logger.Warningf("datas is %v", datas)
+		logger.Debugf("Document is %v", datas)
 		enabled := flag.GetValue(datas)
 		send(w, 200, FlagValueResponse{
 			Status:  200,

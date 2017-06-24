@@ -11,22 +11,26 @@ import (
 	"github.com/urfave/cli"
 )
 
+// urfave/cli entrypoint
 func main() {
 	app := cli.NewApp()
+	initLogger()
 
 	app.Name = "pennant"
 	app.Version = "1.2"
 	app.Usage = "Tool to configure and check feature flags"
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "verbose",
+			Usage: "Show more output",
+		},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:   "test",
 			Usage:  "Test whether a flag is en/disabled based on a policy+document",
-			Action: checkFlag,
+			Action: cliWrapper(checkFlag),
 			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "verbose",
-					Usage: "Show more output",
-				},
 				cli.StringFlag{
 					Name:  "f, file",
 					Usage: "Specify a flag config file",
@@ -41,7 +45,7 @@ func main() {
 			Name:     "list",
 			Category: "flag commands",
 			Usage:    "List flags",
-			Action:   listFlags,
+			Action:   cliWrapper(listFlags),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -53,7 +57,7 @@ func main() {
 			Name:     "update",
 			Category: "flag commands",
 			Usage:    "Create or update a flag",
-			Action:   updateFlag,
+			Action:   cliWrapper(updateFlag),
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "f, file",
@@ -69,7 +73,7 @@ func main() {
 			Name:     "show",
 			Category: "flag commands",
 			Usage:    "Show details for a flag",
-			Action:   showFlag,
+			Action:   cliWrapper(showFlag),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -81,7 +85,7 @@ func main() {
 			Name:     "value",
 			Category: "flag commands",
 			Usage:    "Return whether a flag is en/disabled for a document",
-			Action:   flagValue,
+			Action:   cliWrapper(flagValue),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -97,7 +101,7 @@ func main() {
 			Name:     "delete",
 			Category: "flag commands",
 			Usage:    "Delete a flag",
-			Action:   deleteFlag,
+			Action:   cliWrapper(deleteFlag),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -108,12 +112,8 @@ func main() {
 		{
 			Name:   "server",
 			Usage:  "Run pennant server",
-			Action: runServer,
+			Action: cliWrapper(runServer),
 			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "verbose",
-					Usage: "Show more output",
-				},
 				cli.StringFlag{
 					Name:  "c, conf",
 					Value: "pennant.json",
@@ -130,18 +130,27 @@ func main() {
 	}
 }
 
+// Handle any global flags such as logging levels
+func cliWrapper(f func(*cli.Context) error) func(*cli.Context) error {
+	return func(c *cli.Context) error {
+		if c.GlobalBool("verbose") {
+			enableDebugLogs()
+		}
+		// Run our command
+		return f(c)
+	}
+}
+
+// Run the REST & GRPC servers
 func runServer(c *cli.Context) error {
-	logger.Warning("We should start a server here, eh?")
 	conf, err := loadConfig(c.String("conf"))
 	if err != nil {
 		return fmt.Errorf("Couldn't load config file: %v", err)
 	}
-	logger.Infof("config %v", conf)
 	driver, err := conf.getDriver()
 	if err != nil {
 		return fmt.Errorf("Problem loading driver %v", err)
 	}
-	logger.Infof("driver %v", driver)
 	fc, _ := NewFlagCache()
 	modifyIndex, err := driver.loadAllFlags(fc)
 	if err != nil {
@@ -155,6 +164,7 @@ func runServer(c *cli.Context) error {
 	return nil
 }
 
+// List flags
 func listFlags(c *cli.Context) error {
 	url := genUrl("/flags")
 	var flagList FlagListResponse
@@ -164,7 +174,7 @@ func listFlags(c *cli.Context) error {
 		return err
 	}
 	if len(flagList.Flags) == 0 {
-		logger.Info("Sorry, no flags yet")
+		fmt.Println("Sorry, no flags yet")
 		return nil
 	}
 	cp := NewColPrinter([]string{"Name"}, "  ")
@@ -175,6 +185,7 @@ func listFlags(c *cli.Context) error {
 	return nil
 }
 
+// Show flag details
 func showFlag(c *cli.Context) error {
 	flagName := c.Args().Get(0)
 	if len(flagName) == 0 {
@@ -191,6 +202,7 @@ func showFlag(c *cli.Context) error {
 	return nil
 }
 
+// Update a flag
 func updateFlag(c *cli.Context) error {
 	flagData, err := loadFileFromCli(c, "file", 0)
 	if err != nil {
@@ -207,6 +219,7 @@ func updateFlag(c *cli.Context) error {
 	return nil
 }
 
+// Delete a flag
 func deleteFlag(c *cli.Context) error {
 	flagName := c.Args().Get(0)
 	json := c.Bool("json")
@@ -232,6 +245,7 @@ func deleteFlag(c *cli.Context) error {
 	return nil
 }
 
+// Given a flag name and a document, return whether the flag is enabled
 func flagValue(c *cli.Context) error {
 	flagName := c.Args().Get(0)
 	document, err := loadFileFromCli(c, "document", 1)
@@ -257,19 +271,12 @@ func flagValue(c *cli.Context) error {
 	if valueResp.Status != 200 {
 		return fmt.Errorf("%d - %s", valueResp.Status, valueResp.Message)
 	}
-	enabled := "disabled"
-	if valueResp.Enabled == true {
-		enabled = "enabled"
-	}
-	cp := NewColPrinter([]string{"Flag", "Status"}, "  ")
-	cp.AddRow([]string{
-		flagName,
-		enabled,
-	})
-	cp.Print()
+	prettyPrintValue(flagName, valueResp.Enabled)
 	return nil
 }
 
+// Given a json-formatted flag definition and a document, return whether the
+// flag is enabled. Doesn't require a server to be running.
 func checkFlag(c *cli.Context) error {
 	flagfile, err := ioutil.ReadFile(c.String("file"))
 	if err != nil {
@@ -288,14 +295,13 @@ func checkFlag(c *cli.Context) error {
 		return fmt.Errorf("Can't parse file %s", c.String("datafile"))
 	}
 
-	flag.Parse()
-	logger.Infof("Policy data is %v", flag.GetValue(datas))
+	prettyPrintValue(flag.Name, flag.GetValue(datas))
 	return nil
 }
 
-
 // Helpers below
 
+// Generate a REST url based on env data
 func genUrl(url string) string {
 	server := os.Getenv("PENNANT_SERVER")
 	if len(server) == 0 {
@@ -304,6 +310,21 @@ func genUrl(url string) string {
 	return fmt.Sprintf("%s%s", server, url)
 }
 
+// Print whether a flag is en/disabled
+func prettyPrintValue(flagName string, enabled bool) {
+	enabledStr := "disabled"
+	if enabled == true {
+		enabledStr = "enabled"
+	}
+	cp := NewColPrinter([]string{"Flag", "Status"}, "  ")
+	cp.AddRow([]string{
+		flagName,
+		enabledStr,
+	})
+	cp.Print()
+}
+
+// Console output formatter for a flag
 func prettyPrintFlag(flag *Flag) {
 	cp := NewColPrinter([]string{"Name", "Description", "DefaultValue"}, "  ")
 	cp.AddRow([]string{
@@ -322,6 +343,7 @@ func prettyPrintFlag(flag *Flag) {
 	cp.Print()
 }
 
+// Make a REST request and populate a container with the json response
 func doRestRequest(c *cli.Context, req goreq.Request, container interface{}) (error, bool) {
 	res, err := req.Do()
 	if err != nil {
@@ -336,21 +358,22 @@ func doRestRequest(c *cli.Context, req goreq.Request, container interface{}) (er
 	if res.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(res.Body)
 		var respData map[string]interface{}
-        json.Unmarshal(body, &respData)
+		json.Unmarshal(body, &respData)
 		return fmt.Errorf("%d - %v", res.StatusCode, respData["message"]), false
 	}
 	res.Body.FromJsonTo(container)
 	return nil, false
 }
 
+// Handle reading from an argument, a command line flag, or stdin
 func loadFileFromCli(c *cli.Context, fieldName string, argIndex int) (string, error) {
 	document := c.Args().Get(argIndex)
 	if document == "-" {
 		if stdinData, err := ioutil.ReadAll(os.Stdin); err != nil {
-		    return document, err
-	    } else {
-		    return string(stdinData), nil
-	    }
+			return document, err
+		} else {
+			return string(stdinData), nil
+		}
 	}
 	if len(document) > 0 {
 		return document, nil
@@ -363,5 +386,5 @@ func loadFileFromCli(c *cli.Context, fieldName string, argIndex int) (string, er
 	if err != nil || len(fileData) < 2 {
 		return document, fmt.Errorf("can't read file %s", docFile)
 	}
-	return  string(fileData), nil
+	return string(fileData), nil
 }

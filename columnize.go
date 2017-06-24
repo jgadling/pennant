@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// ColumnPrinter represents a table of data to be pretty-printed
 type ColumnPrinter struct {
 	headings  []string
 	widths    []int
@@ -12,6 +13,8 @@ type ColumnPrinter struct {
 	data      [][]string
 }
 
+// Initialize a new ColumnPrinter with heading labels and the separator to use
+// between columns
 func NewColPrinter(headings []string, separator string) *ColumnPrinter {
 	widths := make([]int, len(headings))
 	for i, heading := range headings {
@@ -24,6 +27,7 @@ func NewColPrinter(headings []string, separator string) *ColumnPrinter {
 	return &cp
 }
 
+// Add a row of data to the table
 func (cp *ColumnPrinter) AddRow(row []string) {
 	for i, cell := range row {
 		if len(cell) > cp.widths[i] {
@@ -33,6 +37,7 @@ func (cp *ColumnPrinter) AddRow(row []string) {
 	cp.data = append(cp.data, row)
 }
 
+// Right-pad a string to a given width, with a padding character.
 func rpad(str string, width int, padding string) string {
 	for true {
 		if len(str) >= width {
@@ -43,6 +48,7 @@ func rpad(str string, width int, padding string) string {
 	return str
 }
 
+// Format a single row and print it.
 func (cp *ColumnPrinter) printRow(row []string, padding string) {
 	for i, cell := range row {
 		row[i] = rpad(cell, cp.widths[i], padding)
@@ -50,6 +56,7 @@ func (cp *ColumnPrinter) printRow(row []string, padding string) {
 	fmt.Println(strings.Join(row, cp.separator))
 }
 
+// Pretty-print the table.
 func (cp *ColumnPrinter) Print() {
 	cp.printRow(cp.headings, " ")
 	separators := make([]string, len(cp.headings))
