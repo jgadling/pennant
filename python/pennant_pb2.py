@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='pennant.proto',
   package='proto',
   syntax='proto3',
-  serialized_pb=_b('\n\rpennant.proto\x12\x05proto\"\xdf\x01\n\x0b\x46lagRequest\x12\x0c\n\x04Name\x18\x01 \x01(\t\x12\x30\n\x07Strings\x18\x02 \x03(\x0b\x32\x1f.proto.FlagRequest.StringsEntry\x12\x30\n\x07Numbers\x18\x03 \x03(\x0b\x32\x1f.proto.FlagRequest.NumbersEntry\x1a.\n\x0cStringsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a.\n\x0cNumbersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\",\n\tFlagReply\x12\x0e\n\x06Status\x18\x01 \x01(\x05\x12\x0f\n\x07\x45nabled\x18\x02 \x01(\x08\x32\x41\n\x07Pennant\x12\x36\n\x0cGetFlagValue\x12\x12.proto.FlagRequest\x1a\x10.proto.FlagReply\"\x00\x42-\n\x1bio.quadra.pennant.flagcheckB\x0cPennantProtoP\x01\x62\x06proto3')
+  serialized_pb=_b('\n\rpennant.proto\x12\x05proto\"\xdf\x01\n\x0b\x46lagRequest\x12\x0c\n\x04Name\x18\x01 \x01(\t\x12\x30\n\x07Strings\x18\x02 \x03(\x0b\x32\x1f.proto.FlagRequest.StringsEntry\x12\x30\n\x07Numbers\x18\x03 \x03(\x0b\x32\x1f.proto.FlagRequest.NumbersEntry\x1a.\n\x0cStringsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a.\n\x0cNumbersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\",\n\tFlagReply\x12\x0e\n\x06Status\x18\x01 \x01(\x05\x12\x0f\n\x07\x45nabled\x18\x02 \x01(\x08\x32\x41\n\x07Pennant\x12\x36\n\x0cGetFlagValue\x12\x12.proto.FlagRequest\x1a\x10.proto.FlagReply\"\x00\x42&\n\x14io.pennant.flagcheckB\x0cPennantProtoP\x01\x62\x06proto3')
 )
 
 
@@ -221,7 +221,7 @@ _sym_db.RegisterMessage(FlagReply)
 
 
 DESCRIPTOR.has_options = True
-DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\033io.quadra.pennant.flagcheckB\014PennantProtoP\001'))
+DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\024io.pennant.flagcheckB\014PennantProtoP\001'))
 _FLAGREQUEST_STRINGSENTRY.has_options = True
 _FLAGREQUEST_STRINGSENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 _FLAGREQUEST_NUMBERSENTRY.has_options = True
