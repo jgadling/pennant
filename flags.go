@@ -70,13 +70,13 @@ func (f *Flag) GetValue(params map[string]interface{}) bool {
 	for i := range f.Policies {
 		go func(policy *Policy) {
 			if policy.ParsedExpr == nil {
-				logger.Errorf("null value exception")
+				logger.Debugf("null value exception")
 				messages <- false
 				return
 			}
 			res, err := policy.ParsedExpr.Evaluate(params)
 			if err != nil {
-				logger.Errorf("err is %v", err)
+				logger.Debugf("err is %v", err)
 				messages <- false
 				return
 			}
