@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/jgadling/pennant.svg?branch=master)](https://travis-ci.org/jgadling/pennant)
+[![GoDoc](https://godoc.org/github.com/jgadling/pennant?status.svg)](https://godoc.org/github.com/jgadling/pennant)
+
 ## Pennant Feature Flags
 
 Pennant is a powerful dark-launch utility designed for maximum flexibility and
