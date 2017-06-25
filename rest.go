@@ -16,7 +16,7 @@ import (
 
 // Run HTTP server
 func runHttp(conf *Config, fc *FlagCache, driver StorageDriver) {
-	router := pennantRouter(conf, fc, driver)
+	router := pennantRouter(fc, driver)
 	handler := handlers.LoggingHandler(os.Stdout, router)
 
 	graceful.AddSignal(syscall.SIGTERM)
@@ -32,7 +32,7 @@ func runHttp(conf *Config, fc *FlagCache, driver StorageDriver) {
 }
 
 // Configure routes
-func pennantRouter(conf *Config, fc *FlagCache, driver StorageDriver) *mux.Router {
+func pennantRouter(fc *FlagCache, driver StorageDriver) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	// Supporting a posted request body via POST and query string params via GET?
 	router.Methods("GET").Path("/flagValue/{name}").Handler(FlagValueHandler(fc))
@@ -214,6 +214,7 @@ func FlagValueHandler(fc *FlagCache) http.Handler {
 		json.Unmarshal(body, &datas)
 
 		// Support Query string data for GET
+		// ONLY SUPPORTS STRINGS THO :'(
 		queryData := r.URL.Query()
 		for k, v := range queryData {
 			if len(v) == 1 {

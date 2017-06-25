@@ -20,28 +20,28 @@ func Test_Flags(t *testing.T) {
 		Convey("Match zero policies", func() {
 			doc1 := map[string]interface{}{
 				"user_username": "nobody",
-				"user_id": 1,
+				"user_id":       1,
 			}
 			So(flag.GetValue(doc1), ShouldEqual, false)
 		})
 		Convey("Match first policy", func() {
 			doc1 := map[string]interface{}{
 				"user_username": "foo",
-				"user_id": 1,
+				"user_id":       1,
 			}
 			So(flag.GetValue(doc1), ShouldEqual, true)
 		})
 		Convey("Match second policy", func() {
 			doc1 := map[string]interface{}{
 				"user_username": "nobody",
-				"user_id": 10,
+				"user_id":       10,
 			}
 			So(flag.GetValue(doc1), ShouldEqual, true)
 		})
 		Convey("Match third policy", func() {
 			doc1 := map[string]interface{}{
 				"user_username": "jessfraz",
-				"user_id": 1,
+				"user_id":       1,
 			}
 			So(flag.GetValue(doc1), ShouldEqual, true)
 		})

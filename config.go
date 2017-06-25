@@ -36,6 +36,8 @@ func (conf *Config) getDriver() (StorageDriver, error) {
 	switch conf.StorageDriver {
 	case "consul":
 		return NewConsulDriver(&conf.Consul)
+	case "memory":
+		return NewMemoryDriver()
 	}
 	return nil, errors.New("invalid driver configuration")
 }

@@ -8,7 +8,7 @@ import (
 
 // ColumnPrinter represents a table of data to be pretty-printed
 type ColumnPrinter struct {
-    output    io.Writer
+	output    io.Writer
 	headings  []string
 	widths    []int
 	separator string

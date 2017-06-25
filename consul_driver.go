@@ -8,14 +8,6 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 )
 
-// Storage driver interface
-type StorageDriver interface {
-	watchForChanges(*FlagCache, uint64)
-	loadAllFlags(*FlagCache) (uint64, error)
-	saveFlag(*Flag) error
-	deleteFlag(string) error
-}
-
 // Consul configuration definition, used by config module.
 type ConsulConfig struct {
 	Protocol    string `json:"protocol"`

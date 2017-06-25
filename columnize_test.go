@@ -8,31 +8,30 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-
 func Test_ColumnPrinter(t *testing.T) {
 	colTests := []struct {
-		name string
-	    separator string
-	    headings []string
-	    rows [][]string
-	    result string
- 	}{
+		name      string
+		separator string
+		headings  []string
+		rows      [][]string
+		result    string
+	}{
 		{
 			"single column", " ",
 			[]string{"one"},
-			[][]string{{"two"},{"three"}},
+			[][]string{{"two"}, {"three"}},
 			"one  \n-----\ntwo  \nthree\n",
-		},{
+		}, {
 			"two columns table", " ",
 			[]string{"one", "two"},
-			[][]string{{"three", "four"},{"five"}},
+			[][]string{{"three", "four"}, {"five"}},
 			"one   two \n----- ----\nthree four\nfive \n",
-		},{
+		}, {
 			"too many columns", " ",
 			[]string{"many", "cols"},
-			[][]string{{"three", "four", "five"},{"six"}},
+			[][]string{{"three", "four", "five"}, {"six"}},
 			"many  cols\n----- ----\nthree four\nsix  \n",
-		},{
+		}, {
 			"no rows", " ",
 			[]string{"no", "rows"},
 			[][]string{},
@@ -52,4 +51,3 @@ func Test_ColumnPrinter(t *testing.T) {
 		})
 	}
 }
-
