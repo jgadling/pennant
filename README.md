@@ -142,22 +142,21 @@ pennant test -f tests/data/flag1.json -d tests/data/data1.json
 ### Roadmap
 V1 milestones:
 
- - ✓ Pluggable storage backends, ships with consul support
+ - ✓ Pluggable storage backends, ships with consul and in-memory support
  - ✓ GRPC and REST query interfaces
  - ✓ REST flag management interfaces
- - ✓ Immediately updates flag cache when consul values change
+ - ✓ Watches for consul value changes
  - ✓ Bundled percentage calculator
  - ✓ Supports arbitrary expressions for en/disabling flags
  - ✓ Client and server in single binary
- - Tests
  - Ships metrics to StatsD
 
 V2:
 
- - More drivers - sqlite, etcd, filesystem?
+ - More drivers - etcd, filesystem
  - Authentication
  - Prometheus compatible stats
- - Query results caching, more perf improvements
+ - Query results caching, perf improvements
  - GRPC flag management interface
 
 ### Further reading on feature flags

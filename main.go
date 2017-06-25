@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -13,11 +14,11 @@ import (
 
 func main() {
 	args := os.Args
-	runCli(args)
+	runCli(args, os.Stdout, os.Stderr)
 }
 
 // urfave/cli entrypoint
-func runCli(args []string) {
+func runCli(args []string, stdout io.Writer, stderr io.Writer) {
 	app := cli.NewApp()
 	initLogger()
 
@@ -34,7 +35,7 @@ func runCli(args []string) {
 		{
 			Name:   "test",
 			Usage:  "Test whether a flag is en/disabled based on a policy+document",
-			Action: cliWrapper(checkFlag),
+			Action: cliWrapper(checkFlag, stdout, stderr),
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "f, file",
@@ -50,7 +51,7 @@ func runCli(args []string) {
 			Name:     "list",
 			Category: "flag commands",
 			Usage:    "List flags",
-			Action:   cliWrapper(listFlags),
+			Action:   cliWrapper(listFlags, stdout, stderr),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -62,7 +63,7 @@ func runCli(args []string) {
 			Name:     "update",
 			Category: "flag commands",
 			Usage:    "Create or update a flag",
-			Action:   cliWrapper(updateFlag),
+			Action:   cliWrapper(updateFlag, stdout, stderr),
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "f, file",
@@ -78,7 +79,7 @@ func runCli(args []string) {
 			Name:     "show",
 			Category: "flag commands",
 			Usage:    "Show details for a flag",
-			Action:   cliWrapper(showFlag),
+			Action:   cliWrapper(showFlag, stdout, stderr),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -90,7 +91,7 @@ func runCli(args []string) {
 			Name:     "value",
 			Category: "flag commands",
 			Usage:    "Return whether a flag is en/disabled for a document",
-			Action:   cliWrapper(flagValue),
+			Action:   cliWrapper(flagValue, stdout, stderr),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -106,7 +107,7 @@ func runCli(args []string) {
 			Name:     "delete",
 			Category: "flag commands",
 			Usage:    "Delete a flag",
-			Action:   cliWrapper(deleteFlag),
+			Action:   cliWrapper(deleteFlag, stdout, stderr),
 			Flags: []cli.Flag{
 				cli.BoolFlag{
 					Name:  "json",
@@ -117,7 +118,7 @@ func runCli(args []string) {
 		{
 			Name:   "server",
 			Usage:  "Run pennant server",
-			Action: cliWrapper(runServer),
+			Action: cliWrapper(runServer, stdout, stderr),
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "c, conf",
@@ -135,18 +136,18 @@ func runCli(args []string) {
 }
 
 // Handle any global flags such as logging levels
-func cliWrapper(f func(*cli.Context) error) func(*cli.Context) error {
+func cliWrapper(f func(*cli.Context, io.Writer, io.Writer) error, stdout io.Writer, stderr io.Writer) func(*cli.Context) error {
 	return func(c *cli.Context) error {
 		if c.GlobalBool("verbose") {
 			enableDebugLogs()
 		}
 		// Run our command
-		return f(c)
+		return f(c, stdout, stderr)
 	}
 }
 
 // Run the REST & GRPC servers
-func runServer(c *cli.Context) error {
+func runServer(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	conf, err := loadConfig(c.String("conf"))
 	if err != nil {
 		return fmt.Errorf("Couldn't load config file: %v", err)
@@ -169,19 +170,19 @@ func runServer(c *cli.Context) error {
 }
 
 // List flags
-func listFlags(c *cli.Context) error {
+func listFlags(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	url := genUrl("/flags")
 	var flagList FlagListResponse
 	req := goreq.Request{Uri: url}
-	err, complete := doRestRequest(c, req, &flagList)
+	err, complete := doRestRequest(c, req, &flagList, stdout)
 	if err != nil || complete {
 		return err
 	}
 	if len(flagList.Flags) == 0 {
-		fmt.Println("Sorry, no flags yet")
+		fmt.Fprintln(stdout, "Sorry, no flags yet")
 		return nil
 	}
-	cp := NewColPrinter([]string{"Name"}, "  ", os.Stdout)
+	cp := NewColPrinter([]string{"Name"}, "  ", stdout)
 	for _, v := range flagList.Flags {
 		cp.AddRow([]string{v})
 	}
@@ -190,7 +191,7 @@ func listFlags(c *cli.Context) error {
 }
 
 // Show flag details
-func showFlag(c *cli.Context) error {
+func showFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	flagName := c.Args().Get(0)
 	if len(flagName) == 0 {
 		return fmt.Errorf("a flag name argument is required")
@@ -198,16 +199,16 @@ func showFlag(c *cli.Context) error {
 	url := genUrl(fmt.Sprintf("/flags/%s", flagName))
 	req := goreq.Request{Uri: url}
 	var flagResp FlagItemResponse
-	err, complete := doRestRequest(c, req, &flagResp)
+	err, complete := doRestRequest(c, req, &flagResp, stdout)
 	if err != nil || complete {
 		return err
 	}
-	prettyPrintFlag(flagResp.Flag)
+	prettyPrintFlag(flagResp.Flag, stdout)
 	return nil
 }
 
 // Update a flag
-func updateFlag(c *cli.Context) error {
+func updateFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	flagData, err := loadFileFromCli(c, "file", 0)
 	if err != nil {
 		return err
@@ -215,16 +216,16 @@ func updateFlag(c *cli.Context) error {
 	url := genUrl("/flags")
 	req := goreq.Request{Uri: url, Method: "POST", Body: flagData}
 	var flagResp FlagItemResponse
-	err, complete := doRestRequest(c, req, &flagResp)
+	err, complete := doRestRequest(c, req, &flagResp, stdout)
 	if err != nil || complete {
 		return err
 	}
-	prettyPrintFlag(flagResp.Flag)
+	prettyPrintFlag(flagResp.Flag, stdout)
 	return nil
 }
 
 // Delete a flag
-func deleteFlag(c *cli.Context) error {
+func deleteFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	flagName := c.Args().Get(0)
 	json := c.Bool("json")
 	if len(flagName) == 0 {
@@ -237,7 +238,7 @@ func deleteFlag(c *cli.Context) error {
 	}
 	if json {
 		body, _ := res.Body.ToString()
-		fmt.Print(body)
+		fmt.Fprintln(stdout, body)
 		return nil
 	}
 	var flagResp FlagValueResponse
@@ -245,12 +246,12 @@ func deleteFlag(c *cli.Context) error {
 	if flagResp.Status != 200 {
 		return fmt.Errorf("%d - %s", flagResp.Status, flagResp.Message)
 	}
-	fmt.Printf("%s deleted\n", flagName)
+	fmt.Fprintf(stdout, "%s deleted\n", flagName)
 	return nil
 }
 
 // Given a flag name and a document, return whether the flag is enabled
-func flagValue(c *cli.Context) error {
+func flagValue(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	flagName := c.Args().Get(0)
 	document, err := loadFileFromCli(c, "document", 1)
 	if err != nil {
@@ -267,7 +268,7 @@ func flagValue(c *cli.Context) error {
 	}
 	if json {
 		body, _ := res.Body.ToString()
-		fmt.Print(body)
+		fmt.Fprintln(stdout, body)
 		return nil
 	}
 	var valueResp FlagValueResponse
@@ -275,13 +276,13 @@ func flagValue(c *cli.Context) error {
 	if valueResp.Status != 200 {
 		return fmt.Errorf("%d - %s", valueResp.Status, valueResp.Message)
 	}
-	prettyPrintValue(flagName, valueResp.Enabled)
+	prettyPrintValue(flagName, valueResp.Enabled, stdout)
 	return nil
 }
 
 // Given a json-formatted flag definition and a document, return whether the
 // flag is enabled. Doesn't require a server to be running.
-func checkFlag(c *cli.Context) error {
+func checkFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	flagfile, err := ioutil.ReadFile(c.String("file"))
 	if err != nil {
 		return fmt.Errorf("can't read file %s", c.String("file"))
@@ -299,7 +300,7 @@ func checkFlag(c *cli.Context) error {
 		return fmt.Errorf("Can't parse file %s", c.String("datafile"))
 	}
 
-	prettyPrintValue(flag.Name, flag.GetValue(datas))
+	prettyPrintValue(flag.Name, flag.GetValue(datas), stdout)
 	return nil
 }
 
@@ -315,12 +316,12 @@ func genUrl(url string) string {
 }
 
 // Print whether a flag is en/disabled
-func prettyPrintValue(flagName string, enabled bool) {
+func prettyPrintValue(flagName string, enabled bool, stdout io.Writer) {
 	enabledStr := "disabled"
 	if enabled == true {
 		enabledStr = "enabled"
 	}
-	cp := NewColPrinter([]string{"Flag", "Status"}, "  ", os.Stdout)
+	cp := NewColPrinter([]string{"Flag", "Status"}, "  ", stdout)
 	cp.AddRow([]string{
 		flagName,
 		enabledStr,
@@ -329,16 +330,16 @@ func prettyPrintValue(flagName string, enabled bool) {
 }
 
 // Console output formatter for a flag
-func prettyPrintFlag(flag *Flag) {
-	cp := NewColPrinter([]string{"Name", "Description", "DefaultValue"}, "  ", os.Stdout)
+func prettyPrintFlag(flag *Flag, stdout io.Writer) {
+	cp := NewColPrinter([]string{"Name", "Description", "DefaultValue"}, "  ", stdout)
 	cp.AddRow([]string{
 		flag.Name,
 		flag.Description,
 		strconv.FormatBool(flag.DefaultValue)})
 	cp.Print()
-	fmt.Println()
+	fmt.Fprintln(stdout)
 
-	cp = NewColPrinter([]string{"Rule", "Comment"}, "  ", os.Stdout)
+	cp = NewColPrinter([]string{"Rule", "Comment"}, "  ", stdout)
 	for _, v := range flag.Policies {
 		cp.AddRow([]string{
 			v.Rules,
@@ -348,7 +349,7 @@ func prettyPrintFlag(flag *Flag) {
 }
 
 // Make a REST request and populate a container with the json response
-func doRestRequest(c *cli.Context, req goreq.Request, container interface{}) (error, bool) {
+func doRestRequest(c *cli.Context, req goreq.Request, container interface{}, stdout io.Writer) (error, bool) {
 	res, err := req.Do()
 	if err != nil {
 		return err, false
@@ -356,7 +357,7 @@ func doRestRequest(c *cli.Context, req goreq.Request, container interface{}) (er
 	printJson := c.Bool("json")
 	if printJson {
 		body, _ := res.Body.ToString()
-		fmt.Print(body)
+		fmt.Fprintln(stdout, body)
 		return nil, true
 	}
 	if res.StatusCode != 200 {
