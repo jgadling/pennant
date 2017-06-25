@@ -11,8 +11,13 @@ import (
 	"github.com/urfave/cli"
 )
 
-// urfave/cli entrypoint
 func main() {
+	args := os.Args
+	runCli(args)
+}
+
+// urfave/cli entrypoint
+func runCli(args []string) {
 	app := cli.NewApp()
 	initLogger()
 
@@ -123,7 +128,6 @@ func main() {
 		},
 	}
 
-	args := os.Args
 	if err := app.Run(args); err != nil {
 		logger.Criticalf("Error: %v", err)
 		os.Exit(1)
@@ -177,7 +181,7 @@ func listFlags(c *cli.Context) error {
 		fmt.Println("Sorry, no flags yet")
 		return nil
 	}
-	cp := NewColPrinter([]string{"Name"}, "  ")
+	cp := NewColPrinter([]string{"Name"}, "  ", os.Stdout)
 	for _, v := range flagList.Flags {
 		cp.AddRow([]string{v})
 	}
@@ -316,7 +320,7 @@ func prettyPrintValue(flagName string, enabled bool) {
 	if enabled == true {
 		enabledStr = "enabled"
 	}
-	cp := NewColPrinter([]string{"Flag", "Status"}, "  ")
+	cp := NewColPrinter([]string{"Flag", "Status"}, "  ", os.Stdout)
 	cp.AddRow([]string{
 		flagName,
 		enabledStr,
@@ -326,7 +330,7 @@ func prettyPrintValue(flagName string, enabled bool) {
 
 // Console output formatter for a flag
 func prettyPrintFlag(flag *Flag) {
-	cp := NewColPrinter([]string{"Name", "Description", "DefaultValue"}, "  ")
+	cp := NewColPrinter([]string{"Name", "Description", "DefaultValue"}, "  ", os.Stdout)
 	cp.AddRow([]string{
 		flag.Name,
 		flag.Description,
@@ -334,7 +338,7 @@ func prettyPrintFlag(flag *Flag) {
 	cp.Print()
 	fmt.Println()
 
-	cp = NewColPrinter([]string{"Rule", "Comment"}, "  ")
+	cp = NewColPrinter([]string{"Rule", "Comment"}, "  ", os.Stdout)
 	for _, v := range flag.Policies {
 		cp.AddRow([]string{
 			v.Rules,
