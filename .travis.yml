@@ -1,5 +1,7 @@
 language: go
 
+install: go get
+script: go test
 go:
 - 1.7.x
 - 1.8.x
