@@ -8,40 +8,14 @@ performance.
 
 ### Getting Started
 
-You'll need [govendor](https://github.com/kardianos/govendor) to manage dependencies. To install:
-
-```
-% go get -u github.com/kardianos/govendor
-```
-
-Using govendor:
-
-```
-# fetch dependencies and copy them into the vendor/ directory
-% govendor get
-# update packages from existing contents of your $GOPATH
-% govendor update
-```
-
 Building and running pennant:
 
 ```
 % brew install consul
 % consul agent -dev -advertise 127.0.0.1
 % git clone pennant.git
-# note govendor wrapping the "build" command
-% govendor build && ./pennant server
+% go build && ./pennant server
 ```
-
-### API
-
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | /flags | List flags |
-| GET | /flags/{name} | Get a flag's definition |
-| DELETE | /flags/{name} | Delete a flag |
-| POST | /flags | Create or update a flag |
-| GET | /flagValue/{name} | Fetch en/disabled state of a flag, given a document |
 
 ### Example flag
 
@@ -66,6 +40,12 @@ Building and running pennant:
   ]
 }
 
+```
+
+#### Test a flag without a server
+
+```
+pennant test -f tests/data/flag1.json -d tests/data/data1.json
 ```
 
 ### CLI
@@ -135,10 +115,33 @@ $ pennant delete red_button
 red_button deleted
 ```
 
-#### Test a flag without a server
+### API
+
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | /flags | List flags |
+| GET | /flags/{name} | Get a flag's definition |
+| DELETE | /flags/{name} | Delete a flag |
+| POST | /flags | Create or update a flag |
+| GET | /flagValue/{name} | Fetch en/disabled state of a flag, given a document |
+
+
+### Managing dependencies
+
+You'll need [govendor](https://github.com/kardianos/govendor) to manage dependencies. To install:
 
 ```
-pennant test -f tests/data/flag1.json -d tests/data/data1.json
+% go get -u github.com/kardianos/govendor
+```
+Using govendor:
+
+```
+# fetch dependencies and copy them into the vendor/ directory
+% govendor get
+# update packages from existing contents of your $GOPATH
+% govendor update
+# note govendor wrapping the "build" command
+% govendor build && ./pennant server
 ```
 
 
