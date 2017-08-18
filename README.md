@@ -156,6 +156,7 @@ V1 milestones:
  - ✓ Supports arbitrary expressions for en/disabling flags
  - ✓ Client and server in single binary
  - Ships metrics to StatsD
+ - FlagGroup - evaluate multiple flags in a single query
 
 V2:
 
