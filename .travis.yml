@@ -3,6 +3,9 @@ language: go
 install: go get
 script: go test
 go:
-- 1.7.x
-- 1.8.x
+- 1.12.x
+- 1.13.x
 - master
+
+env:
+- GO111MODULE=on
