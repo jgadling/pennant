@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/franela/goreq"
+	"github.com/jgadling/pennant/pkg/columnizer"
 	"github.com/urfave/cli"
 )
 
@@ -122,7 +123,7 @@ func runCli(args []string, stdout io.Writer, stderr io.Writer) {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "c, conf",
-					Value: "pennant.json",
+					Value: "configs/pennant.json",
 					Usage: "Specify a config file",
 				},
 			},
@@ -182,7 +183,7 @@ func listFlags(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 		fmt.Fprintln(stdout, "Sorry, no flags yet")
 		return nil
 	}
-	cp := NewColPrinter([]string{"Name"}, "  ", stdout)
+	cp := columnizer.NewColPrinter([]string{"Name"}, "  ", stdout)
 	for _, v := range flagList.Flags {
 		cp.AddRow([]string{v})
 	}
@@ -321,7 +322,7 @@ func prettyPrintValue(flagName string, enabled bool, stdout io.Writer) {
 	if enabled == true {
 		enabledStr = "enabled"
 	}
-	cp := NewColPrinter([]string{"Flag", "Status"}, "  ", stdout)
+	cp := columnizer.NewColPrinter([]string{"Flag", "Status"}, "  ", stdout)
 	cp.AddRow([]string{
 		flagName,
 		enabledStr,
@@ -331,7 +332,7 @@ func prettyPrintValue(flagName string, enabled bool, stdout io.Writer) {
 
 // Console output formatter for a flag
 func prettyPrintFlag(flag *Flag, stdout io.Writer) {
-	cp := NewColPrinter([]string{"Name", "Description", "DefaultValue"}, "  ", stdout)
+	cp := columnizer.NewColPrinter([]string{"Name", "Description", "DefaultValue"}, "  ", stdout)
 	cp.AddRow([]string{
 		flag.Name,
 		flag.Description,
@@ -339,7 +340,7 @@ func prettyPrintFlag(flag *Flag, stdout io.Writer) {
 	cp.Print()
 	fmt.Fprintln(stdout)
 
-	cp = NewColPrinter([]string{"Rule", "Comment"}, "  ", stdout)
+	cp = columnizer.NewColPrinter([]string{"Rule", "Comment"}, "  ", stdout)
 	for _, v := range flag.Policies {
 		cp.AddRow([]string{
 			v.Rules,

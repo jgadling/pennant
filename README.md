@@ -126,25 +126,6 @@ red_button deleted
 | GET | /flagValue/{name} | Fetch en/disabled state of a flag, given a document |
 
 
-### Managing dependencies
-
-You'll need [govendor](https://github.com/kardianos/govendor) to manage dependencies. To install:
-
-```
-% go get -u github.com/kardianos/govendor
-```
-Using govendor:
-
-```
-# fetch dependencies and copy them into the vendor/ directory
-% govendor get
-# update packages from existing contents of your $GOPATH
-% govendor update
-# note govendor wrapping the "build" command
-% govendor build && ./pennant server
-```
-
-
 ### Roadmap
 V1 milestones:
 
@@ -160,7 +141,7 @@ V1 milestones:
 
 V2:
 
- - More drivers - etcd, filesystem
+ - More drivers - redis, etcd, filesystem
  - Authentication
  - Prometheus compatible stats
  - Query results caching, perf improvements

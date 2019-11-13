@@ -1,4 +1,4 @@
-package main
+package evaluators
 
 import (
 	"fmt"
@@ -23,13 +23,11 @@ func libraryPct(arguments ...interface{}) (interface{}, error) {
 	h := fnv.New64a()
 	h.Write([]byte(value))
 	num := uint64(math.Mod(float64(h.Sum64()), 100.0))
-	logger.Debugf("string value is %v", value)
-	logger.Debugf("scaled value is %v", num)
 	return float64((num % 100) + 1), nil
 }
 
 // Configure the govaluate library to add the pct method to the evaluator
-func getLibraryFunctions() map[string]govaluate.ExpressionFunction {
+func GetLibraryFunctions() map[string]govaluate.ExpressionFunction {
 	functions := make(map[string]govaluate.ExpressionFunction)
 	functions["pct"] = libraryPct
 	return functions

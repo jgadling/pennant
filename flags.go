@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Knetic/govaluate"
+	"github.com/jgadling/pennant/pkg/evaluators"
 )
 
 // Flag defines a feature as some metadata and a collection of policies
@@ -45,11 +46,11 @@ func LoadAndParseFlag(flagData []byte) (*Flag, error) {
 // Parse and cache all the policy expressions for this flag. This needs to be
 // done before GetResult can be invoked.
 func (f *Flag) Parse() error {
-	fallbackExpr, _ := govaluate.NewEvaluableExpressionWithFunctions("false", getLibraryFunctions())
+	fallbackExpr, _ := govaluate.NewEvaluableExpressionWithFunctions("false", evaluators.GetLibraryFunctions())
 	for i := range f.Policies {
 		policy := &f.Policies[i]
 
-		expr, err := govaluate.NewEvaluableExpressionWithFunctions(policy.Rules, getLibraryFunctions())
+		expr, err := govaluate.NewEvaluableExpressionWithFunctions(policy.Rules, evaluators.GetLibraryFunctions())
 		if err != nil {
 			policy.ParsedExpr = fallbackExpr
 			return err
