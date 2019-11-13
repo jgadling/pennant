@@ -15,7 +15,7 @@ type ColumnPrinter struct {
 	data      [][]string
 }
 
-// Initialize a new ColumnPrinter with heading labels and the separator to use
+// NewColPrinter Initializes a new ColumnPrinter with heading labels and the separator to use
 // between columns
 func NewColPrinter(headings []string, separator string, file io.Writer) *ColumnPrinter {
 	widths := make([]int, len(headings))
@@ -30,7 +30,7 @@ func NewColPrinter(headings []string, separator string, file io.Writer) *ColumnP
 	return &cp
 }
 
-// Add a row of data to the table
+// AddRow Adds a row of data to the table
 func (cp *ColumnPrinter) AddRow(row []string) {
 	for i, cell := range row {
 		if i >= len(cp.headings) {
@@ -69,7 +69,7 @@ func (cp *ColumnPrinter) printRow(row []string, padding string) {
 	fmt.Fprintln(cp.output, strings.Join(row[:colCount], cp.separator))
 }
 
-// Pretty-print the table.
+// Print Pretty-prints the table.
 func (cp *ColumnPrinter) Print() {
 	cp.printRow(cp.headings, " ")
 	separators := make([]string, len(cp.headings))

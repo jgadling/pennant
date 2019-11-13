@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/Knetic/govaluate"
 	"hash/fnv"
 	"math"
+
+	"github.com/Knetic/govaluate"
 )
 
 // Scale any value to an int from 1 - 100
-func library_pct(arguments ...interface{}) (interface{}, error) {
+func libraryPct(arguments ...interface{}) (interface{}, error) {
 	firstArg := arguments[0]
 
 	var value string
@@ -30,6 +31,6 @@ func library_pct(arguments ...interface{}) (interface{}, error) {
 // Configure the govaluate library to add the pct method to the evaluator
 func getLibraryFunctions() map[string]govaluate.ExpressionFunction {
 	functions := make(map[string]govaluate.ExpressionFunction)
-	functions["pct"] = library_pct
+	functions["pct"] = libraryPct
 	return functions
 }

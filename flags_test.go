@@ -52,7 +52,7 @@ func Test_Flags(t *testing.T) {
 	})
 	Convey("a flag json file can be loaded and not parsed", t, func() {
 		flagfile, err := ioutil.ReadFile("tests/data/flag1.json")
-		flag, err := LoadFlagJson(flagfile)
+		flag, err := LoadFlagJSON(flagfile)
 		So(err, ShouldBeNil)
 		So(flag.Name, ShouldEqual, "red_button")
 		for _, policy := range flag.Policies {
@@ -62,7 +62,7 @@ func Test_Flags(t *testing.T) {
 	})
 	Convey("an invalid json raises errors", t, func() {
 		flagfile := []byte("{'garbage:")
-		_, err := LoadFlagJson(flagfile)
+		_, err := LoadFlagJSON(flagfile)
 		So(err, ShouldNotBeNil)
 	})
 }

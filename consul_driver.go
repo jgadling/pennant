@@ -8,7 +8,7 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 )
 
-// Consul configuration definition, used by config module.
+// ConsulConfig is the consul configuration definition, used by config module.
 type ConsulConfig struct {
 	Protocol    string `json:"protocol"`
 	Host        string `json:"host"`
@@ -18,13 +18,13 @@ type ConsulConfig struct {
 	PollTimeout int    `json:"poll_timeout"`
 }
 
-// Container for consul driver config
+// ConsulDriver is a container for consul driver config
 type ConsulDriver struct {
 	conf   *ConsulConfig
 	client *consulapi.Client
 }
 
-// Return a StorageDriver interface'd object.
+// NewConsulDriver returns a StorageDriver interface'd object.
 func NewConsulDriver(conf *ConsulConfig) (*ConsulDriver, error) {
 	driver := &ConsulDriver{
 		conf:   conf,
@@ -73,7 +73,7 @@ func (driver *ConsulDriver) loadAllFlags(fc *FlagCache) (uint64, error) {
 	return version, nil
 }
 
-// Read all flags from Consul
+// GetFlags reads all flags from Consul
 func (driver *ConsulDriver) GetFlags(version uint64) (consulapi.KVPairs, uint64, error) {
 	newVersion := uint64(0)
 	client := driver.client.KV()
@@ -93,7 +93,7 @@ func (driver *ConsulDriver) GetFlags(version uint64) (consulapi.KVPairs, uint64,
 func (driver *ConsulDriver) updateCache(fc *FlagCache, data consulapi.KVPairs) error {
 	foundFlags := make(map[string]bool)
 	for _, flagItem := range data {
-		flag, err := LoadFlagJson(flagItem.Value)
+		flag, err := LoadFlagJSON(flagItem.Value)
 		foundFlags[flag.Name] = true
 		if err != nil {
 			// If there's an error in a single flag, log it and move on
@@ -115,7 +115,7 @@ func (driver *ConsulDriver) updateCache(fc *FlagCache, data consulapi.KVPairs) e
 	}
 	// Remove any flags that were in the cache and no longer in consul
 	cachedFlags := fc.List()
-	for idx, _ := range cachedFlags {
+	for idx := range cachedFlags {
 		_, ok := foundFlags[idx]
 		if !ok {
 			logger.Debugf("Deleting cache key %s", idx)

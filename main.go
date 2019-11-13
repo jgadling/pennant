@@ -164,17 +164,17 @@ func runServer(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	go driver.watchForChanges(fc, modifyIndex)
 
 	go runGrpc(conf, fc)
-	runHttp(conf, fc, driver)
+	runHTTP(conf, fc, driver)
 
 	return nil
 }
 
 // List flags
 func listFlags(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
-	url := genUrl("/flags")
+	url := genURL("/flags")
 	var flagList FlagListResponse
 	req := goreq.Request{Uri: url}
-	err, complete := doRestRequest(c, req, &flagList, stdout)
+	complete, err := doRestRequest(c, req, &flagList, stdout)
 	if err != nil || complete {
 		return err
 	}
@@ -196,10 +196,10 @@ func showFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	if len(flagName) == 0 {
 		return fmt.Errorf("a flag name argument is required")
 	}
-	url := genUrl(fmt.Sprintf("/flags/%s", flagName))
+	url := genURL(fmt.Sprintf("/flags/%s", flagName))
 	req := goreq.Request{Uri: url}
 	var flagResp FlagItemResponse
-	err, complete := doRestRequest(c, req, &flagResp, stdout)
+	complete, err := doRestRequest(c, req, &flagResp, stdout)
 	if err != nil || complete {
 		return err
 	}
@@ -213,10 +213,10 @@ func updateFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	url := genUrl("/flags")
+	url := genURL("/flags")
 	req := goreq.Request{Uri: url, Method: "POST", Body: flagData}
 	var flagResp FlagItemResponse
-	err, complete := doRestRequest(c, req, &flagResp, stdout)
+	complete, err := doRestRequest(c, req, &flagResp, stdout)
 	if err != nil || complete {
 		return err
 	}
@@ -231,7 +231,7 @@ func deleteFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	if len(flagName) == 0 {
 		return fmt.Errorf("a flag name argument is required")
 	}
-	url := genUrl(fmt.Sprintf("/flags/%s", flagName))
+	url := genURL(fmt.Sprintf("/flags/%s", flagName))
 	res, err := goreq.Request{Uri: url, Method: "DELETE"}.Do()
 	if err != nil {
 		return err
@@ -261,7 +261,7 @@ func flagValue(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 	if len(flagName) == 0 {
 		return fmt.Errorf("flag name is required")
 	}
-	url := genUrl(fmt.Sprintf("/flagValue/%s", flagName))
+	url := genURL(fmt.Sprintf("/flagValue/%s", flagName))
 	res, err := goreq.Request{Uri: url, Method: "POST", Body: document}.Do()
 	if err != nil {
 		return fmt.Errorf("Error: %v", err)
@@ -307,7 +307,7 @@ func checkFlag(c *cli.Context, stdout io.Writer, stderr io.Writer) error {
 // Helpers below
 
 // Generate a REST url based on env data
-func genUrl(url string) string {
+func genURL(url string) string {
 	server := os.Getenv("PENNANT_SERVER")
 	if len(server) == 0 {
 		server = "http://127.0.0.1:1234"
@@ -349,36 +349,36 @@ func prettyPrintFlag(flag *Flag, stdout io.Writer) {
 }
 
 // Make a REST request and populate a container with the json response
-func doRestRequest(c *cli.Context, req goreq.Request, container interface{}, stdout io.Writer) (error, bool) {
+func doRestRequest(c *cli.Context, req goreq.Request, container interface{}, stdout io.Writer) (bool, error) {
 	res, err := req.Do()
 	if err != nil {
-		return err, false
+		return false, err
 	}
-	printJson := c.Bool("json")
-	if printJson {
+	printJSON := c.Bool("json")
+	if printJSON {
 		body, _ := res.Body.ToString()
 		fmt.Fprintln(stdout, body)
-		return nil, true
+		return true, nil
 	}
 	if res.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(res.Body)
 		var respData map[string]interface{}
 		json.Unmarshal(body, &respData)
-		return fmt.Errorf("%d - %v", res.StatusCode, respData["message"]), false
+		return false, fmt.Errorf("%d - %v", res.StatusCode, respData["message"])
 	}
 	res.Body.FromJsonTo(container)
-	return nil, false
+	return false, nil
 }
 
 // Handle reading from an argument, a command line flag, or stdin
 func loadFileFromCli(c *cli.Context, fieldName string, argIndex int) (string, error) {
 	document := c.Args().Get(argIndex)
 	if document == "-" {
-		if stdinData, err := ioutil.ReadAll(os.Stdin); err != nil {
+		stdinData, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
 			return document, err
-		} else {
-			return string(stdinData), nil
 		}
+		return string(stdinData), nil
 	}
 	if len(document) > 0 {
 		return document, nil
