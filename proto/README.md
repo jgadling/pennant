@@ -1,6 +1,6 @@
-Build protobuf:
+Build protobuf from the root of this repo:
 protoc -I proto proto/pennant.proto --go_out=plugins=grpc:proto
-protoc -I proto --python_out=python --plugin=protoc-gen-grpc=/usr/local/bin/grpc_python_plugin  proto/pennant.proto
+protoc -I proto --python_out=tools/python --plugin=protoc-gen-grpc=/usr/local/bin/grpc_python_plugin proto/pennant.proto
 
 
 Also, right now all document values in the grpc api are strings. This allows us

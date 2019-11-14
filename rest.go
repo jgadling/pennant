@@ -15,7 +15,7 @@ import (
 )
 
 // Run HTTP server
-func runHttp(conf *Config, fc *FlagCache, driver StorageDriver) {
+func runHTTP(conf *Config, fc *FlagCache, driver StorageDriver) {
 	router := pennantRouter(fc, driver)
 	handler := handlers.LoggingHandler(os.Stdout, router)
 
@@ -46,21 +46,21 @@ func pennantRouter(fc *FlagCache, driver StorageDriver) *mux.Router {
 	return router
 }
 
-// Whether or not a flag is enabled
+// FlagValueResponse exposes whether or not a flag is enabled
 type FlagValueResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 	Enabled bool   `json:"enabled"`
 }
 
-// Single flag
+// FlagItemResponse is a single flag definition
 type FlagItemResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 	Flag    *Flag  `json:"flag"`
 }
 
-// List of flags
+// FlagListResponse is a list of flag definitions
 type FlagListResponse struct {
 	Status  int      `json:"status"`
 	Message string   `json:"message"`
@@ -74,7 +74,7 @@ func send(w http.ResponseWriter, status int, resp interface{}) {
 	w.Write([]byte(b))
 }
 
-// Update a flag
+// SaveFlag updates a flag
 func SaveFlag(driver StorageDriver) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := ioutil.ReadAll(r.Body)
@@ -117,7 +117,7 @@ func SaveFlag(driver StorageDriver) http.Handler {
 	})
 }
 
-// Returns a list of all flags
+// ListFlags returns a list of all flags
 func ListFlags(fc *FlagCache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		flagList := make([]string, 0)
@@ -133,7 +133,7 @@ func ListFlags(fc *FlagCache) http.Handler {
 	})
 }
 
-// Get the definition of a single flag
+// GetFlag gets the definition of a single flag
 func GetFlag(fc *FlagCache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -157,7 +157,7 @@ func GetFlag(fc *FlagCache) http.Handler {
 	})
 }
 
-// Delete a flag
+// DeleteFlag deletes a flag
 func DeleteFlag(fc *FlagCache, driver StorageDriver) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -190,7 +190,7 @@ func DeleteFlag(fc *FlagCache, driver StorageDriver) http.Handler {
 	})
 }
 
-// Perform policy evaluations on a document to determine whether a flag is
+// FlagValueHandler performs policy evaluations on a document to determine whether a flag is
 // enabled.
 func FlagValueHandler(fc *FlagCache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

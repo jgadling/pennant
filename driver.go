@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// Storage driver interface
+// StorageDriver is the storage driver interface
 type StorageDriver interface {
 	watchForChanges(*FlagCache, uint64)
 	loadAllFlags(*FlagCache) (uint64, error)
@@ -12,12 +12,12 @@ type StorageDriver interface {
 	deleteFlag(string) error
 }
 
-// Container for memory driver config
+// MemoryDriver is a container for memory driver config
 type MemoryDriver struct {
 	fc *FlagCache
 }
 
-// Return a StorageDriver interface'd object.
+// NewMemoryDriver returns a StorageDriver interface'd object.
 func NewMemoryDriver() (*MemoryDriver, error) {
 	driver := &MemoryDriver{}
 	return driver, nil

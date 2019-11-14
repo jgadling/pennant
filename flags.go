@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/Knetic/govaluate"
+	"github.com/jgadling/pennant/pkg/evaluators"
 )
 
-// A feature flag is some metadata and a collection of policies
+// Flag defines a feature as some metadata and a collection of policies
 type Flag struct {
 	Name         string   `json:"name"`
 	Description  string   `json:"description"`
@@ -16,15 +17,15 @@ type Flag struct {
 	Version      uint64   `json:"-"` // Yeah this abstraction is leaky :(
 }
 
-// A policy is a govaluate-compatible expression that returns true or false
+// Policy is a govaluate-compatible expression that returns true or false
 type Policy struct {
 	Comment    string                         `json:"comment"`
 	Rules      string                         `json:"rules"`
 	ParsedExpr *govaluate.EvaluableExpression `json:"-"`
 }
 
-// Load a flag but don't parse the policies yet
-func LoadFlagJson(flagData []byte) (*Flag, error) {
+// LoadFlagJSON loads a flag but doesn't parse the policies yet
+func LoadFlagJSON(flagData []byte) (*Flag, error) {
 	flag := Flag{}
 	if err := json.Unmarshal(flagData, &flag); err != nil {
 		return &flag, fmt.Errorf("can't parse flag %s", flagData)
@@ -32,7 +33,7 @@ func LoadFlagJson(flagData []byte) (*Flag, error) {
 	return &flag, nil
 }
 
-// Load a flag and parse the policy expressions
+// LoadAndParseFlag loads a flag and parses the policy expressions
 func LoadAndParseFlag(flagData []byte) (*Flag, error) {
 	flag := Flag{}
 	if err := json.Unmarshal(flagData, &flag); err != nil {
@@ -45,11 +46,11 @@ func LoadAndParseFlag(flagData []byte) (*Flag, error) {
 // Parse and cache all the policy expressions for this flag. This needs to be
 // done before GetResult can be invoked.
 func (f *Flag) Parse() error {
-	fallbackExpr, _ := govaluate.NewEvaluableExpressionWithFunctions("false", getLibraryFunctions())
+	fallbackExpr, _ := govaluate.NewEvaluableExpressionWithFunctions("false", evaluators.GetLibraryFunctions())
 	for i := range f.Policies {
 		policy := &f.Policies[i]
 
-		expr, err := govaluate.NewEvaluableExpressionWithFunctions(policy.Rules, getLibraryFunctions())
+		expr, err := govaluate.NewEvaluableExpressionWithFunctions(policy.Rules, evaluators.GetLibraryFunctions())
 		if err != nil {
 			policy.ParsedExpr = fallbackExpr
 			return err
